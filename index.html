@@ -245,15 +245,10 @@ select option{background:var(--bg3);color:var(--text0)}
           <filter id="splashGlowF"><feGaussianBlur stdDeviation="4" result="b"/><feMerge><feMergeNode in="b"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
           <filter id="outerGlow"><feGaussianBlur stdDeviation="8" result="b"/><feMerge><feMergeNode in="b"/></feMerge></filter>
         </defs>
-        <!-- Outer glow layer -->
         <polygon points="15,8 32,8 32,72 82,72 82,88 15,88" fill="#00d4ff" filter="url(#outerGlow)" opacity="0.4"/>
-        <!-- Main L body -->
         <polygon points="15,8 32,8 32,72 82,72 82,88 15,88" fill="url(#splashLg)" filter="url(#splashGlowF)"/>
-        <!-- Top chamfer highlight -->
         <polygon points="15,8 32,8 32,22 22,34 15,34" fill="url(#splashHl)" opacity="0.8"/>
-        <!-- Inner edge -->
         <polygon points="28,12 32,8 32,72 28,72" fill="rgba(0,0,0,0.3)"/>
-        <!-- Bottom highlight -->
         <polygon points="32,68 82,68 82,72 32,72" fill="rgba(255,255,255,0.2)"/>
       </svg>
     </div>
@@ -308,13 +303,9 @@ select option{background:var(--bg3);color:var(--text0)}
           </linearGradient>
           <filter id="glow1"><feGaussianBlur stdDeviation="2" result="blur"/><feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge></filter>
         </defs>
-        <!-- Main L body -->
         <polygon points="15,8 32,8 32,72 82,72 82,88 15,88" fill="url(#lg1)" filter="url(#glow1)"/>
-        <!-- Top chamfer highlight -->
         <polygon points="15,8 32,8 32,20 24,30 15,30" fill="url(#lg1h)" opacity="0.7"/>
-        <!-- Inner edge shadow -->
         <polygon points="28,12 32,8 32,72 28,72" fill="rgba(0,0,0,0.25)"/>
-        <!-- Bottom right highlight -->
         <polygon points="32,68 82,68 82,72 32,72" fill="rgba(255,255,255,0.15)"/>
       </svg>
     </div>
@@ -465,7 +456,7 @@ select option{background:var(--bg3);color:var(--text0)}
     <div id="dl-all-status" style="font-size:10px;color:var(--text2);font-family:'JetBrains Mono',monospace;margin-top:6px;text-align:center"></div>
     <div class="post-dl-actions">
       <button class="post-btn" onclick="resetOhlc()">+ Another Dataset</button>
-      <button class="post-btn" onclick="showScreen('market')">🌐 Market Intel</button>
+      <button class="post-btn" onclick="showScreen('market')" style="border-color:var(--accent3);color:var(--accent3)">🌐 Market Intel</button>
     </div>
   </div>
 </div>
@@ -629,7 +620,6 @@ let genFiles=[];
 // =====================================================================
 window.addEventListener('load',()=>{
   document.getElementById('login-user').focus();
-  // Enter key handling for login
   document.getElementById('login-user').addEventListener('keydown',e=>{
     if(e.key==='Tab'){e.preventDefault();document.getElementById('login-pass').focus();}
     if(e.key==='Enter'){document.getElementById('login-pass').focus();}
@@ -707,14 +697,8 @@ async function runBootSequence(){
   const bs=document.getElementById('boot-screen');
   bs.style.display='flex';
   const lines=[
-    {txt:'[OK] LUMA TERMINAL v9.0 INITIALIZING...',color:'var(--green)'},
+    {txt:'[OK] LUMA TERMINAL v3.0 INITIALIZING...',color:'var(--green)'},
     {txt:'[OK] Kernel loaded — nancy_pelosi edition',color:'var(--green)'},
-    {txt:'[OK] Intelligence engine armed + backup layer ready',color:'var(--green)'},
-    {txt:'[..] Loading fractal model engine — C2/C3 logic online',color:'var(--accent)'},
-    {txt:'[OK] FVG detection module online',color:'var(--green)'},
-    {txt:'[OK] Order block scanner armed',color:'var(--green)'},
-    {txt:'[..] Calibrating liquidity sweep detector',color:'var(--accent)'},
-    {txt:'[OK] Swing point validity engine loaded',color:'var(--green)'},
     {txt:'[OK] Binance live feed connected',color:'var(--green)'},
     {txt:'[OK] Fear & Greed index linked',color:'var(--green)'},
     {txt:'[OK] Coinglass liquidation feed armed',color:'var(--green)'},
@@ -1080,7 +1064,7 @@ function renderFieldChips(){
 function updateSlider(el){document.getElementById('weeks-label').textContent=el.value+' wks';}
 function toggleDateRange(){document.getElementById('date-range-wrap').style.display=document.getElementById('use-daterange').checked?'block':'none';}
 // =====================================================================
-// DOWNLOAD LOGIC
+// DOWNLOAD LOGIC — 100% REAL DATA (NO SIMULATED/MOCK FALLBACK)
 // =====================================================================
 async function startDownload(){
   const tasks=[];
@@ -1109,8 +1093,15 @@ async function startDownload(){
     updateProg(i,tasks.length,'Fetching '+t.sym+' '+t.tf+'...');
     stepEls[k].scrollIntoView({block:'nearest'});
     let csv='';
-    try{csv=t.type==='crypto'?await fetchBinance(t.sym,t.tf):await fetchYahoo(t.sym,t.tf);}
-    catch(e){csv=mockData(t.sym,t.tf);}
+    try{
+      csv=t.type==='crypto'?await fetchBinance(t.sym,t.tf):await fetchYahoo(t.sym,t.tf);
+    }catch(e){
+      const errMsg='ERROR: '+e.message;
+      updateProg(i,tasks.length,errMsg);
+      stepEls[k].className='progress-step';
+      stepEls[k].innerHTML=`<span style="color:var(--red)">✗</span><span>${lbl} — ${errMsg}</span>`;
+      continue;
+    }
     const c=t.type==='crypto'?CRYPTO.find(x=>x.sym===t.sym):FUTURES.find(x=>x.sym===t.sym);
     const fl=t.type==='crypto'?(c?c.label:t.sym):(c?(c.file||c.label):t.sym);
     genFiles.push({name:fl+'_'+t.tf+'_OHLC.csv',data:csv,sym:t.sym,tf:t.tf});
@@ -1214,6 +1205,9 @@ function buildCSV(candles){
   });
   return[header,...rows].join('\n');
 }
+// =====================================================================
+// YAHOO — 100% REAL DATA WITH MULTI-PROXY (NO SIMULATED DATA)
+// =====================================================================
 async function fetchYahoo(sym,tf){
   const tfMap={'1m':'1m','5m':'5m','15m':'15m','30m':'30m','1h':'1h','4h':'1h','1d':'1d','1w':'1wk','1M':'1mo'};
   const interval=tfMap[tf]||'1d';
@@ -1225,9 +1219,7 @@ async function fetchYahoo(sym,tf){
     const wks=parseInt(document.getElementById('weeks-slider').value);
     p1=Math.floor((Date.now()-wks*7*864e5)/1000);p2=Math.floor(Date.now()/1000);
   }
-  // Yahoo Finance URL — note: short intraday intervals only work for recent 60 days
   const yUrl=`https://query1.finance.yahoo.com/v8/finance/chart/${encodeURIComponent(sym)}?interval=${interval}&period1=${p1}&period2=${p2}&events=history&includeAdjustedClose=true`;
-  // Try multiple CORS proxies in order
   const proxies=[
     url=>`https://corsproxy.io/?${encodeURIComponent(url)}`,
     url=>`https://api.allorigins.win/get?url=${encodeURIComponent(url)}`,
@@ -1243,7 +1235,6 @@ async function fetchYahoo(sym,tf){
       const txt=await r.text();
       let parsed;
       try{parsed=JSON.parse(txt);}catch{continue;}
-      // allorigins wraps in .contents, others return direct
       if(parsed.contents){
         try{parsed=JSON.parse(parsed.contents);}catch{continue;}
       }
@@ -1267,31 +1258,6 @@ async function fetchYahoo(sym,tf){
     if(fields.includes('volume'))vals.push(q.volume[i]!=null?q.volume[i]:'');
     return[dt,...vals].join(',');
   });
-  return[header,...rows].join('\n');
-}
-function mockData(sym,tf){
-  const fields=[...selFields];
-  const header=['datetime',...fields].join(',');
-  const rows=[];
-  let price=sym.includes('BTC')?85000:sym.includes('ETH')?2800:sym.includes('SOL')?140:sym.includes('NQ')||sym.includes('QQQ')?19000:sym.includes('ES')||sym.includes('SPY')?5200:100;
-  const ms={'1m':6e4,'5m':3e5,'15m':9e5,'30m':18e5,'1h':36e5,'4h':144e5,'1d':864e5,'1w':6048e5,'1M':2592e6};
-  const interval=ms[tf]||864e5;
-  const wks=parseInt(document.getElementById('weeks-slider').value||52);
-  const count=Math.min(500,Math.floor(wks*7*864e5/interval));
-  const start=Date.now()-count*interval;
-  for(let i=0;i<count;i++){
-    const dt=new Date(start+i*interval).toISOString().replace('T',' ').slice(0,19);
-    price=Math.max(1,price+(Math.random()-.47)*price*.018);
-    const o=price,h=o*(1+Math.random()*.014),l=o*(1-Math.random()*.014),c=l+(h-l)*Math.random();
-    const v=Math.floor(Math.random()*1e6+1e5);
-    const vals=[];
-    if(fields.includes('open'))vals.push(o.toFixed(4));
-    if(fields.includes('high'))vals.push(h.toFixed(4));
-    if(fields.includes('low'))vals.push(l.toFixed(4));
-    if(fields.includes('close'))vals.push(c.toFixed(4));
-    if(fields.includes('volume'))vals.push(v);
-    rows.push([dt,...vals].join(','));
-  }
   return[header,...rows].join('\n');
 }
 function sleep(ms){return new Promise(r=>setTimeout(r,ms));}
